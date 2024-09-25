@@ -1,9 +1,10 @@
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
+using IGDB;
 using Newtonsoft.Json;
 
-namespace Yuki.SlashCommands {
+namespace Rittou.SlashCommands {
     /*public enum ImageSendType {
         Dog,
         Cat
@@ -13,9 +14,9 @@ namespace Yuki.SlashCommands {
 
     }
 
-    public class ToolsModule : InteractionModuleBase {
-        [SlashCommand("timestamp", "Sends a Timestamp")]
-        public async Task TimestampCommandAsync([Summary(description: "The date")] DateTime date) {
+    //public class ToolsModule : InteractionModuleBase {
+        /*[SlashCommand("timestamp", "Sends a Timestamp")]
+        public async Task TimestampCommandAsync([Summary(description: "The date")] DateTimeOffset date) {
             await RespondAsync("OK");
             /*var maybeResult = Maybe<IJsonResult>.None;
             TimeZoneInfo
@@ -42,6 +43,6 @@ namespace Yuki.SlashCommands {
             } else {
                 await RespondAsync("Cannot fetch image (unimplemented type)");
             }*/
-        }
-    }
+    //    }
+    //}
 }

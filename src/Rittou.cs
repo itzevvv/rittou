@@ -7,10 +7,10 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Yuki.Services;
+using Rittou.Services;
 
-namespace Yuki {
-    public class Yuki {
+namespace Rittou {
+    public class Rittou {
         public static readonly IServiceProvider Services = ConfigureServices();
         public static readonly DiscordSocketClient Client = Services.GetRequiredService<DiscordSocketClient>();
         public static readonly CommandService Commands = Services.GetRequiredService<CommandService>();
@@ -39,7 +39,7 @@ namespace Yuki {
             return collection.BuildServiceProvider();
         }
 
-        public async Task RunYukiAsync() {
+        public async Task RunRittouAsync() {
             Client.Ready += ClientReady;
 
             if (Config.Token != null) {

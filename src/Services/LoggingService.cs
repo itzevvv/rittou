@@ -2,7 +2,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Yuki.Services {
+namespace Rittou.Services {
     public class LoggingService {
         public LoggingService(DiscordSocketClient client, CommandService cmd) {
             client.Log += LogAsync;

@@ -3,12 +3,12 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 
-namespace Yuki.Preconditions {
+namespace Rittou.Preconditions {
     public class RequireOwnerUserCommand : PreconditionAttribute {
         public override Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo commandInfo, IServiceProvider services) {
             bool isUserInteraction = context.Interaction.IntegrationOwners.Any(integration => integration.Key is ApplicationIntegrationType.UserInstall);
-            bool isInServerOrBotDm = (context.Channel is SocketDMChannel && context.Channel.Id == Yuki.Client.CurrentUser.Id) || context.Interaction.GuildId != null;
-            bool isBotOwnerUserInteration = context.Interaction.IntegrationOwners.Any(integration => integration.Key is ApplicationIntegrationType.UserInstall && integration.Value == Yuki.Config.OwnerId);
+            bool isInServerOrBotDm = (context.Channel is SocketDMChannel && context.Channel.Id == Rittou.Client.CurrentUser.Id) || context.Interaction.GuildId != null;
+            bool isBotOwnerUserInteration = context.Interaction.IntegrationOwners.Any(integration => integration.Key is ApplicationIntegrationType.UserInstall && integration.Value == Rittou.Config.OwnerId);
 
             if (isUserInteraction && !isInServerOrBotDm) {
                 if (isBotOwnerUserInteration) {

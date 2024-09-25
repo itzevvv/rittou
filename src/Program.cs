@@ -1,6 +1,6 @@
-﻿namespace Yuki {
+﻿namespace Rittou {
     public class Program {
         // Entrypoint
-        public static Task Main() => new Yuki().RunYukiAsync();
+        public static Task Main() => new Rittou().RunRittouAsync();
     }
 }

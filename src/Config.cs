@@ -1,7 +1,9 @@
-namespace Yuki {
+namespace Rittou {
     public class Config {
         public string? Token { get; set; }
-        public string? KawaiiApi {get; set; }
+
+        public string? TwitchId { get; set; }
+        public string? TwitchSecret { get; set; }
 
         public ulong DevGuild { get; set; }
         public ulong OwnerId { get; set; }

@@ -1,12 +1,13 @@
+using System.Net;
 using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
 using Discord.Rest;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Yuki.Preconditions;
+using Rittou.Preconditions;
 
-namespace Yuki.SlashCommands {
+namespace Rittou.SlashCommands {
     using IJsonResult = Result<IJsonDeserializable, string>;
 
     public interface IJsonDeserializable {
@@ -127,10 +128,114 @@ namespace Yuki.SlashCommands {
         }
     }
 
+    public struct DuckObject : IJsonDeserializable {
+        public string Url { get; set; }
+        public string Message { get; set; }
+
+        public IJsonResult FromJson(string json) {
+            var data = JsonConvert.DeserializeObject<DuckObject>(json);
+
+            if (data.Url != null) {
+                return Result.Success<IJsonDeserializable, string>(data);
+            } else {
+                return Result.Failure<IJsonDeserializable, string>($"API returned {data.Message}");
+            }
+        }
+
+        public string GetUrl() {
+            return Url;
+        }
+    }
+
+    public struct FoxObject : IJsonDeserializable {
+        public string Image { get; set; }
+        public string Link { get; set; }
+
+        public IJsonResult FromJson(string json) {
+            var data = JsonConvert.DeserializeObject<FoxObject>(json);
+
+            if (data.Image != null) {
+                return Result.Success<IJsonDeserializable, string>(data);
+            } else {
+                return Result.Failure<IJsonDeserializable, string>($"Fox API failed");
+            }
+        }
+
+        public string GetUrl() {
+            return Image;
+        }
+    }
+
+    struct MKBHDCollection : IJsonDeserializable {
+        public string Version { get; set; }
+        public Dictionary<string, MKBHDObject> Data { get; set; }
+
+        public IJsonResult FromJson(string jsonString) {
+            var data = JsonConvert.DeserializeObject<MKBHDCollection>(jsonString);
+            if (data.Data != null || Version != "1") {
+                return Result.Success<IJsonDeserializable, string>(data);
+            } else {
+                if (Version != "1") {
+                    return Result.Failure<IJsonDeserializable, string>($"API failed: Unsupported version: {data.Version}");
+                }
+
+                return Result.Failure<IJsonDeserializable, string>($"API failed: error unknown: {data}");
+            }
+        }
+
+        public string GetUrl() {
+            string obj = string.Empty;
+            
+            while (string.IsNullOrWhiteSpace(obj)) {
+                obj = Data.ElementAt(new Random().Next(0, Data.Count)).Value.GetUrl();
+            }
+
+            return obj;
+        }
+    }
+
+    public struct MKBHDObject : IJsonDeserializable {
+
+        //[JsonProperty(propertyName: "dhd")]
+        public string Dhd { get; set; }
+        public string Dsd { get; set; }
+        public string S { get; set; }
+        public string E { get; set; }
+        
+        public IJsonResult FromJson(string jsonString) {
+            var data = JsonConvert.DeserializeObject<MKBHDObject>(jsonString);
+            
+            if (data.Dsd != null || data.Dsd != null || data.S != null) {
+                return Result.Success<IJsonDeserializable, string>(data);
+            } else {
+                return Result.Failure<IJsonDeserializable, string>($"API failed: error unknown: {data}");
+            }
+        }
+
+        public string GetUrl() {
+            if (Dhd != null) {
+                return Dhd;
+            }
+            
+            if (Dsd != null) {
+                return Dsd;
+            }
+
+            if (S != null) {
+                return S;
+            }
+
+            return E;
+        }
+    }
+
 
     public enum ImageSendType {
+        Random,
         Dog,
-        Cat
+        Cat,
+        Duck,
+        Fox
     }
 
     [CommandContextType(InteractionContextType.Guild, InteractionContextType.BotDm, InteractionContextType.PrivateChannel)]
@@ -138,18 +243,30 @@ namespace Yuki.SlashCommands {
     public class ImageSlashModule : InteractionModuleBase<SocketInteractionContext> {
         private const string DOG_URL = "https://dog.ceo/api/breeds/image/random";
         private const string CAT_URL = "https://api.thecatapi.com/v1/images/search";
+        private const string DUCK_URL = "https://random-d.uk/api/v2/quack";
+        private const string FOX_URL = "https://randomfox.ca/floof/";
 
         [RequireOwnerUserCommand]
-        [SlashCommand("image", "Sends an image")]
+        [SlashCommand("animal", "Sends an image/gif of an animal")]
         public async Task ImageCommandAsync([Summary(description: "The image you want to send")] ImageSendType image) {
             var maybeResult = Maybe<IJsonResult>.None;
             
+            if (image == ImageSendType.Random) {
+                image = (ImageSendType)new Random().Next(1, Enum.GetNames(typeof(ImageSendType)).Length - 1);
+            }
+
             switch (image) {
                 case ImageSendType.Dog:
                     maybeResult = await IJsonDeserializable.GetJson<DogObject>(DOG_URL);
                     break;
                 case ImageSendType.Cat:
                     maybeResult = await IJsonDeserializable.GetJson<CatObject>(CAT_URL);
+                    break;
+                case ImageSendType.Duck:
+                    maybeResult = await IJsonDeserializable.GetJson<DuckObject>(DUCK_URL);
+                    break;
+                case ImageSendType.Fox:
+                    maybeResult = await IJsonDeserializable.GetJson<FoxObject>(FOX_URL);
                     break;
             };
 
@@ -184,6 +301,77 @@ namespace Yuki.SlashCommands {
                         .WithAuthor($"Goodnight, {Context.User.GlobalName}!")
                         .WithImageUrl(neko.GetUrl())
                         .WithFooter($"{neko.AnimeName}")
+                        .Build();
+                    
+                    await RespondAsync(embed: embed);
+                    }
+                } else {
+                    await RespondAsync(result.Error);
+                }
+            } else {
+                await RespondAsync("Cannot fetch image (unimplemented type)");
+            }
+        }
+
+        public static string GetFileExtensionFromUrl(string url) {
+            url = url.Split('?')[0];
+            url = url.Split('/').Last();
+            
+            return url.Contains('.') ? url.Substring(url.LastIndexOf('.')) : "";
+        }
+
+        [SlashCommand("mkbhd", "View images from MKBHD's \"Panels\" app")]   
+        public async Task MkbhdAsync() {
+            Maybe<IJsonResult> maybeResult = await IJsonDeserializable.GetJson<MKBHDCollection>("https://storage.googleapis.com/panels-api/data/20240916/media-1a-i-p~s");
+
+            if (maybeResult.HasValue) {
+                var result = maybeResult.Value;
+
+                if (result.IsSuccess) {
+                    if (result.Value is MKBHDCollection collection) {
+                        int index = 0;
+
+                        foreach (var file in collection.Data) {
+                            Console.WriteLine(file.Key);
+                            string url = file.Value.GetUrl();
+
+                            Console.WriteLine($"{file.Key} ({index + 1}/{collection.Data.Count})");
+                            Console.WriteLine(url);
+                            Console.WriteLine(GetFileExtensionFromUrl(url));
+                            
+                            if (File.Exists($"mkbhd/{file.Key}{GetFileExtensionFromUrl(url)}")) {
+                                Console.WriteLine($"   file for {file.Key} exists; skipping");
+                                index += 1;
+                                continue;
+                            } else {
+                                if (!Directory.Exists("mkbhd")) {
+                                    Directory.CreateDirectory("mkbhd");
+                                }
+                            }
+
+                            using (var client = new HttpClient()) {
+                                if (string.IsNullOrWhiteSpace(url)) {
+                                    Console.WriteLine($"   url for {file.Key} empty; skipping");
+                                    index += 1;
+                                    continue;
+                                }
+                                
+                                var response = await client.GetAsync(url);
+
+                                using (var stream = new FileStream($"mkbhd/{file.Key}{GetFileExtensionFromUrl(url)}", FileMode.Create, FileAccess.Write, FileShare.None)) {
+                                    await response.Content.CopyToAsync(stream);
+                                    Console.WriteLine($"  Downloaded {file.Key}{GetFileExtensionFromUrl(url)}");
+                                }
+                            }
+
+                            index += 1;
+                        }
+
+                        string mkb = collection.GetUrl();
+                        
+                        Embed embed = new EmbedBuilder()
+                        .WithImageUrl(mkb)
+                        .WithFooter($"Panels CDN v{collection.Version}")
                         .Build();
                     
                     await RespondAsync(embed: embed);

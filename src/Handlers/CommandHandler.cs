@@ -1,8 +1,8 @@
 using Discord.WebSocket;
 
-namespace Yuki.Handlers {
+namespace Rittou.Handlers {
     public class CommandHandler {
-        private readonly DiscordSocketClient Client = Yuki.Client;
+        private readonly DiscordSocketClient Client = Rittou.Client;
 
         public void Asdf() {
             
